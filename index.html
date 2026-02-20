@@ -49,8 +49,6 @@
     /* Progress bar shimmer */
     #progress-bar { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
 
-    #run-output { white-space: pre-wrap; font-family: 'Menlo', 'Monaco', monospace; }
-
     /* Score badge pulse on update */
     .score-pulse { animation: scorePulse 0.4s ease; }
     @keyframes scorePulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.3); color:#fbbf24; } }
@@ -84,7 +82,6 @@
     挑戦する！ 🚀
   </button>
 
-  <p class="mt-8 text-xs text-gray-600">ruby.wasm で実際にコードを実行できます（初回のみロード時間が必要）</p>
 </div>
 
 <!-- ============================= QUIZ ============================= -->
@@ -157,33 +154,6 @@
         <pre class="rounded-xl overflow-auto"><code id="q-after-code" class="language-ruby"></code></pre>
       </div>
 
-      <!-- ruby.wasm run -->
-      <div class="px-5 pb-5 bg-gray-900/60 border-t border-gray-700">
-        <div class="flex items-center gap-3 mt-4">
-          <button id="btn-run" onclick="runCurrentCode()"
-                  class="flex items-center gap-2 px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600
-                         border border-gray-600 hover:border-gray-500 rounded-lg transition-all font-mono">
-            <span id="run-icon">▶</span>
-            <span id="run-label">Before / After を実行して比較 <span class="text-gray-500 text-xs">(ruby.wasm)</span></span>
-          </button>
-          <span id="ruby-status" class="text-xs text-gray-500"></span>
-        </div>
-        <!-- Before / After 並列結果 -->
-        <div id="run-results" class="hidden mt-3 grid grid-cols-2 gap-3">
-          <div>
-            <div class="flex items-center gap-1 mb-1">
-              <span class="text-xs bg-red-900/50 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded font-mono">Before</span>
-            </div>
-            <div id="run-before" class="p-3 bg-black/60 rounded-xl border border-gray-700 text-red-300 text-xs font-mono whitespace-pre-wrap min-h-8"></div>
-          </div>
-          <div>
-            <div class="flex items-center gap-1 mb-1">
-              <span class="text-xs bg-green-900/50 text-green-300 border border-green-800/50 px-1.5 py-0.5 rounded font-mono">After</span>
-            </div>
-            <div id="run-after" class="p-3 bg-black/60 rounded-xl border border-gray-700 text-green-300 text-xs font-mono whitespace-pre-wrap min-h-8"></div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- next button -->
@@ -267,12 +237,6 @@ const ALL_QUESTIONS = {
         { text: `str.absent?`, correct: false },
       ],
       explanation: '`blank?` は ActiveSupport が提供するメソッドです。nil・空文字・空白のみの文字列・空配列・空ハッシュすべてに true を返します。`nil.blank?` も安全に呼び出せるため nil チェックが不要になります。',
-      execBefore: `[nil, "", "   ", "hello"].each do |str|
-  p str.nil? || str == ""
-end`,
-      execAfter: `[nil, "", "   ", "hello"].each do |str|
-  p str.blank?
-end`,
     },
     {
       id: 'as2',
@@ -287,12 +251,6 @@ end`,
         { text: `name.filled?`, correct: false },
       ],
       explanation: '`present?` は `blank?` の反対で、値が存在する（nil でも空でもない）場合に true を返します。`!name.blank?` でも同じですが、`present?` の方が意図が明確で読みやすいコードになります。',
-      execBefore: `[nil, "", "Alice"].each do |name|
-  p !name.nil? && name != ""
-end`,
-      execAfter: `[nil, "", "Alice"].each do |name|
-  p name.present?
-end`,
     },
     {
       id: 'as3',
@@ -307,12 +265,6 @@ end`,
         { text: `params[:name].present_value`, correct: false },
       ],
       explanation: '`presence` は `present?` なら self を、`blank?` なら nil を返します。`x.present? ? x : nil` と完全に等価です。DB の空文字列を nil として扱う際などに特に有用です。',
-      execBefore: `["hello", "", nil, "   "].each do |v|
-  p v.present? ? v : nil
-end`,
-      execAfter: `["hello", "", nil, "   "].each do |v|
-  p v.presence
-end`,
     },
     {
       id: 'as4',
@@ -327,12 +279,6 @@ end`,
         { text: `[1, 2, 3].contains?(x)`, correct: false },
       ],
       explanation: '`in?` はレシーバーがコレクションに含まれるかを確認します。「x が [1,2,3] の中にある？」という英語の自然な語順で書けるため、条件分岐の中でより読みやすいコードになります。Range や Set など `include?` を持つオブジェクトならすべて使えます。',
-      execBefore: `[2, 5].each do |x|
-  p [1, 2, 3].include?(x)
-end`,
-      execAfter: `[2, 5].each do |x|
-  p x.in?([1, 2, 3])
-end`,
     },
     {
       id: 'as5',
@@ -347,12 +293,6 @@ end`,
         { text: `user&.name rescue nil`, correct: false },
       ],
       explanation: '`try` は nil-safe なメソッド呼び出しです。レシーバーが nil なら nil を返し、そうでなければメソッドを呼び出します。なお Ruby 2.3+ では `user&.name`（safe navigation operator）が言語機能として導入されており、現在はこちらがより推奨されます。',
-      execBefore: `[nil, "alice"].each do |user|
-  p user ? user.upcase : nil
-end`,
-      execAfter: `[nil, "alice"].each do |user|
-  p user.try(:upcase)
-end`,
     },
     {
       id: 'as6',
@@ -367,12 +307,6 @@ end`,
         { text: `role.one_of?("admin", "editor", "viewer")`, correct: false },
       ],
       explanation: '`in?` を使うと複数値との比較が一行で書けます。値が増えても配列に追加するだけでよく、`||` で繋ぐ書き方より格段に保守しやすくなります。',
-      execBefore: `["admin", "guest"].each do |role|
-  p role == "admin" || role == "editor" || role == "viewer"
-end`,
-      execAfter: `["admin", "guest"].each do |role|
-  p role.in?(%w[admin editor viewer])
-end`,
     },
     {
       id: 'hash5',
@@ -389,12 +323,6 @@ end`,
         { text: `defaults.nested_merge(config)`, correct: false },
       ],
       explanation: '`deep_merge` は ActiveSupport が提供するメソッドで、ネストした Hash を再帰的にマージします。通常の `merge` はトップレベルのキーしかマージしませんが、`deep_merge` はネスト全体をマージします。',
-      execBefore: `defaults = {db: {host: "localhost", port: 5432}, cache: {ttl: 300}}
-config   = {db: {port: 5433, name: "myapp"}, log: "info"}
-p defaults.merge(config)`,
-      execAfter: `defaults = {db: {host: "localhost", port: 5432}, cache: {ttl: 300}}
-config   = {db: {port: 5433, name: "myapp"}, log: "info"}
-p defaults.deep_merge(config)`,
     },
   ],
 };
@@ -408,12 +336,6 @@ let currentIndex      = 0;
 let score             = 0;
 let answered          = false;
 let categoryAnswers   = {};   // { activesupport: {correct:0, total:0}, ... }
-
-// ruby.wasm
-let rubyVM          = null;
-let rubyInitializing = false;
-let rubyReady       = false;
-let pendingRun      = false;
 
 // ─────────────────────────────────────────────
 //  画面切替
@@ -505,11 +427,6 @@ function renderQuestion() {
   // 解説・次へボタンを隠す
   document.getElementById('q-explanation').classList.add('hidden');
   document.getElementById('btn-next').classList.add('hidden');
-  document.getElementById('run-results').classList.add('hidden');
-  document.getElementById('ruby-status').textContent = '';
-  document.getElementById('btn-run').disabled = false;
-  document.getElementById('run-icon').textContent = '▶';
-  document.getElementById('run-label').innerHTML = 'コードを実行 <span class="text-gray-400 text-xs">(ruby.wasm)</span>';
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -639,217 +556,6 @@ function showResult() {
 }
 
 // ─────────────────────────────────────────────
-//  ruby.wasm 初期化
-// ─────────────────────────────────────────────
-async function initRuby() {
-  if (rubyReady || rubyInitializing) return;
-  rubyInitializing = true;
-
-  const statusEl = document.getElementById('ruby-status');
-  const runBtn   = document.getElementById('btn-run');
-  const runIcon  = document.getElementById('run-icon');
-  const runLabel = document.getElementById('run-label');
-
-  const setStatus = (msg) => { statusEl.textContent = msg; };
-  const setError  = (msg) => {
-    runBtn.disabled     = false;
-    runIcon.textContent = '⚠️';
-    runLabel.innerHTML  = 'Before / After を実行して比較 <span class="text-gray-500 text-xs">(ruby.wasm)</span>';
-    setStatus(`❌ ${msg}`);
-    document.getElementById('run-before').textContent = `初期化失敗:\n${msg}`;
-    document.getElementById('run-after').textContent  = 'F12 → Console で詳細を確認してください。';
-    document.getElementById('run-results').classList.remove('hidden');
-  };
-
-  runBtn.disabled     = true;
-  runIcon.textContent = '⏳';
-  runLabel.textContent = '読み込み中...';
-  setStatus('ruby.wasm を初期化しています（初回は 30〜60 秒かかる場合があります）');
-
-  try {
-    // Step 1: ESM モジュール読み込み
-    setStatus('[1/4] @ruby/wasm-wasi モジュールを読み込み中...');
-    const { DefaultRubyVM } = await import(
-      'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.1/dist/browser/+esm'
-    );
-
-    // Step 2: WASM バイナリを ArrayBuffer でフェッチ
-    setStatus('[2/4] ruby+stdlib.wasm をダウンロード中（約 30 MB）...');
-    const response = await fetch(
-      'https://cdn.jsdelivr.net/npm/@ruby/3.4-wasm-wasi@2.7.1/dist/ruby+stdlib.wasm'
-    );
-    if (!response.ok) throw new Error(`HTTP ${response.status} – WASM ファイルの取得に失敗`);
-
-    // Step 3: コンパイル（compileStreaming が失敗する場合は ArrayBuffer で再試行）
-    setStatus('[3/4] WASM をコンパイル中...');
-    let wasmModule;
-    const buf = await response.arrayBuffer();
-    wasmModule = await WebAssembly.compile(buf);
-
-    // Step 4: VM 起動
-    setStatus('[4/4] Ruby VM を起動中...');
-    const { vm } = await DefaultRubyVM(wasmModule);
-
-    // js gem を最初にロード（ruby.wasm ブラウザ環境の必須要件）
-    vm.eval(`require "js"`);
-
-    // 出力キャプチャ用グローバル配列と puts/p/print のオーバーライド
-    // （StringIO は ruby.wasm の IO ブリッジと干渉するため使わない）
-    vm.eval(`
-      $__quiz_out = []
-
-      module Kernel
-        def puts(*args)
-          if args.empty?
-            $__quiz_out << ""
-          else
-            args.each do |a|
-              if a.is_a?(Array)
-                a.flatten.each { |x| $__quiz_out << x.to_s }
-              else
-                $__quiz_out << a.to_s
-              end
-            end
-          end
-          nil
-        end
-
-        def p(*args)
-          args.each { |a| $__quiz_out << a.inspect }
-          args.length == 1 ? args[0] : (args.empty? ? nil : args)
-        end
-
-        def print(*args)
-          $__quiz_out << args.map(&:to_s).join
-          nil
-        end
-      end
-    `);
-
-    // ActiveSupport polyfill
-    vm.eval(`
-      class Object
-        def blank?
-          respond_to?(:empty?) ? empty? : !self
-        end
-        def present?; !blank?; end
-        def presence; self if present?; end
-        def in?(collection); collection.include?(self); end
-        def try(method_name = nil, *args, &block)
-          if block_given? && method_name.nil?
-            yield(self)
-          else
-            public_send(method_name, *args, &block)
-          end
-        rescue NoMethodError
-          nil
-        end
-      end
-
-      class NilClass
-        def blank?; true; end
-        def try(*_a); nil; end
-      end
-      class FalseClass
-        def blank?; true; end
-      end
-      class String
-        def blank?; strip.empty?; end
-      end
-      class Hash
-        unless method_defined?(:slice)
-          def slice(*keys)
-            keys.each_with_object({}) { |k, h| h[k] = self[k] if key?(k) }
-          end
-        end
-        unless method_defined?(:except)
-          def except(*keys)
-            reject { |k, _| keys.include?(k) }
-          end
-        end
-        def deep_merge(other, &blk)
-          merge(other) do |key, ov, nv|
-            if ov.is_a?(Hash) && nv.is_a?(Hash)
-              ov.deep_merge(nv, &blk)
-            elsif blk
-              blk.call(key, ov, nv)
-            else
-              nv
-            end
-          end
-        end
-      end
-    `);
-
-    rubyVM    = vm;
-    rubyReady = true;
-
-    runBtn.disabled     = false;
-    runIcon.textContent = '▶';
-    runLabel.innerHTML  = 'コードを実行 <span class="text-gray-400 text-xs">(ruby.wasm)</span>';
-    setStatus('✅ ruby.wasm 準備完了');
-    setTimeout(() => { setStatus(''); }, 3000);
-
-    if (pendingRun) { pendingRun = false; execRuby(); }
-
-  } catch (err) {
-    console.error('[ruby.wasm] 初期化失敗:', err);
-    setError(err.message || String(err));
-  }
-
-  rubyInitializing = false;
-}
-
-// ─────────────────────────────────────────────
-//  コード実行
-// ─────────────────────────────────────────────
-async function runCurrentCode() {
-  if (!rubyReady) {
-    pendingRun = true;
-    await initRuby();
-    return;
-  }
-  execRuby();
-}
-
-function evalRuby(code) {
-  const safe = code.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
-  rubyVM.eval(`$__quiz_out = []`);
-  rubyVM.eval(`
-    begin
-      ${safe}
-    rescue => e
-      $__quiz_out << "#{e.class}: #{e.message}"
-    end
-  `);
-  const result = rubyVM.eval(`$__quiz_out.join("\\n")`);
-  const text = (result && typeof result.toJS === 'function') ? result.toJS() : String(result);
-  return (text || '').trim() || '(出力なし)';
-}
-
-function execRuby() {
-  const q = currentQuestions[currentIndex];
-  if (!q || !q.execBefore || !q.execAfter) return;
-
-  const beforeEl  = document.getElementById('run-before');
-  const afterEl   = document.getElementById('run-after');
-  const resultsEl = document.getElementById('run-results');
-
-  beforeEl.textContent = '実行中...';
-  afterEl.textContent  = '実行中...';
-  resultsEl.classList.remove('hidden');
-
-  try {
-    beforeEl.textContent = evalRuby(q.execBefore);
-    afterEl.textContent  = evalRuby(q.execAfter);
-  } catch (e) {
-    console.error('[ruby.wasm] 実行エラー:', e);
-    beforeEl.textContent = `エラー: ${e.message}`;
-    afterEl.textContent  = `エラー: ${e.message}`;
-  }
-}
-
-// ─────────────────────────────────────────────
 //  ユーティリティ
 // ─────────────────────────────────────────────
 function shuffle(arr) {
@@ -873,7 +579,6 @@ function retryCurrentCategory() {
 window.goHome               = goHome;
 window.startAllCategories   = startAllCategories;
 window.nextQuestion         = nextQuestion;
-window.runCurrentCode       = runCurrentCode;
 window.retryCurrentCategory = retryCurrentCategory;
 
 // ─────────────────────────────────────────────
