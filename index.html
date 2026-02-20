@@ -66,20 +66,34 @@
     <p class="text-lg text-gray-400">Pure Ruby のコードを Rails らしく書き換えよう！</p>
   </div>
 
-  <div class="w-full max-w-sm mb-8">
-    <div class="category-card bg-indigo-900/60 border border-indigo-700/50 hover:border-indigo-500 rounded-2xl p-8 cursor-pointer text-center"
+  <div class="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="category-card bg-indigo-900/60 border border-indigo-700/50 hover:border-indigo-500 rounded-2xl p-6 cursor-pointer text-center"
          data-category="activesupport">
-      <div class="text-5xl mb-4">⚡</div>
-      <h2 class="text-2xl font-bold mb-2">ActiveSupport</h2>
-      <p class="text-indigo-300 text-sm mb-5">blank?, present?, presence, in?, try, deep_merge</p>
+      <div class="text-4xl mb-3">⚡</div>
+      <h2 class="text-xl font-bold mb-1">ActiveSupport</h2>
+      <p class="text-indigo-300 text-xs mb-4">blank?, squish, index_by, 1.week...</p>
       <span class="text-xs bg-indigo-800 text-indigo-300 px-3 py-1 rounded-full">13 問</span>
+    </div>
+    <div class="category-card bg-emerald-900/60 border border-emerald-700/50 hover:border-emerald-500 rounded-2xl p-6 cursor-pointer text-center"
+         data-category="activerecord">
+      <div class="text-4xl mb-3">🗄️</div>
+      <h2 class="text-xl font-bold mb-2">Active Record</h2>
+      <p class="text-emerald-300 text-xs mb-4">pluck, exists?, find_or_create_by...</p>
+      <span class="text-xs bg-emerald-800 text-emerald-300 px-3 py-1 rounded-full">6 問</span>
+    </div>
+    <div class="category-card bg-rose-900/60 border border-rose-700/50 hover:border-rose-500 rounded-2xl p-6 cursor-pointer text-center"
+         data-category="viewhelper">
+      <div class="text-4xl mb-3">🎨</div>
+      <h2 class="text-xl font-bold mb-2">View Helper</h2>
+      <p class="text-rose-300 text-xs mb-4">time_ago_in_words, pluralize, cycle...</p>
+      <span class="text-xs bg-rose-800 text-rose-300 px-3 py-1 rounded-full">6 問</span>
     </div>
   </div>
 
-  <button onclick="startCategory('activesupport')"
+  <button onclick="startAllCategories()"
           class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500
                  rounded-full text-lg font-bold transition-all shadow-lg hover:shadow-indigo-500/30">
-    挑戦する！ 🚀
+    全カテゴリまとめてやる！ 🚀
   </button>
 
 </div>
@@ -217,12 +231,24 @@ const DOC_URLS = {
   as5:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-try',          label: 'Rails API — Object#try' },
   as6:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-in-3F',        label: 'Rails API — Object#in?' },
   hash5: { url: 'https://api.rubyonrails.org/classes/Hash.html#method-i-deep_merge',     label: 'Rails API — Hash#deep_merge' },
-  as7:   { url: 'https://api.rubyonrails.org/classes/String.html#method-i-squish',       label: 'Rails API — String#squish' },
-  as8:   { url: 'https://api.rubyonrails.org/classes/Array.html#method-c-wrap',          label: 'Rails API — Array.wrap' },
-  as9:   { url: 'https://api.rubyonrails.org/classes/Enumerable.html#method-i-index_by', label: 'Rails API — Enumerable#index_by' },
-  as10:  { url: 'https://api.rubyonrails.org/classes/String.html#method-i-truncate',     label: 'Rails API — String#truncate' },
-  as11:  { url: 'https://api.rubyonrails.org/classes/Numeric.html#method-i-weeks',       label: 'Rails API — Numeric#weeks' },
-  as12:  { url: 'https://api.rubyonrails.org/classes/Enumerable.html#method-i-many-3F',  label: 'Rails API — Enumerable#many?' },
+  as7:   { url: 'https://api.rubyonrails.org/classes/String.html#method-i-squish',                          label: 'Rails API — String#squish' },
+  as8:   { url: 'https://api.rubyonrails.org/classes/Array.html#method-c-wrap',                             label: 'Rails API — Array.wrap' },
+  as9:   { url: 'https://api.rubyonrails.org/classes/Enumerable.html#method-i-index_by',                   label: 'Rails API — Enumerable#index_by' },
+  as10:  { url: 'https://api.rubyonrails.org/classes/String.html#method-i-truncate',                        label: 'Rails API — String#truncate' },
+  as11:  { url: 'https://api.rubyonrails.org/classes/Numeric.html#method-i-weeks',                          label: 'Rails API — Numeric#weeks' },
+  as12:  { url: 'https://api.rubyonrails.org/classes/Enumerable.html#method-i-many-3F',                    label: 'Rails API — Enumerable#many?' },
+  ar1:   { url: 'https://api.rubyonrails.org/classes/ActiveRecord/Calculations.html#method-i-pluck',        label: 'Rails API — ActiveRecord#pluck' },
+  ar2:   { url: 'https://api.rubyonrails.org/classes/ActiveRecord/FinderMethods.html#method-i-exists-3F',   label: 'Rails API — ActiveRecord#exists?' },
+  ar3:   { url: 'https://api.rubyonrails.org/classes/ActiveRecord/Relation.html#method-i-find_or_create_by',label: 'Rails API — ActiveRecord#find_or_create_by' },
+  ar4:   { url: 'https://api.rubyonrails.org/classes/ActiveRecord/Relation.html#method-i-update_all',       label: 'Rails API — ActiveRecord#update_all' },
+  ar5:   { url: 'https://api.rubyonrails.org/classes/ActiveRecord/QueryMethods/WhereChain.html#method-i-not',label: 'Rails API — where.not' },
+  ar6:   { url: 'https://api.rubyonrails.org/classes/ActiveRecord/Batches.html#method-i-find_each',         label: 'Rails API — ActiveRecord#find_each' },
+  vh1:   { url: 'https://api.rubyonrails.org/classes/ActionView/Helpers/DateHelper.html#method-i-time_ago_in_words',     label: 'Rails API — time_ago_in_words' },
+  vh2:   { url: 'https://api.rubyonrails.org/classes/ActionView/Helpers/TextHelper.html#method-i-pluralize',             label: 'Rails API — pluralize' },
+  vh3:   { url: 'https://api.rubyonrails.org/classes/ActionView/Helpers/NumberHelper.html#method-i-number_to_currency',  label: 'Rails API — number_to_currency' },
+  vh4:   { url: 'https://api.rubyonrails.org/classes/ActionView/Helpers/TagHelper.html#method-i-content_tag',            label: 'Rails API — content_tag' },
+  vh5:   { url: 'https://api.rubyonrails.org/classes/ActionView/Helpers/NumberHelper.html#method-i-number_to_human_size',label: 'Rails API — number_to_human_size' },
+  vh6:   { url: 'https://api.rubyonrails.org/classes/ActionView/Helpers/TextHelper.html#method-i-cycle',                 label: 'Rails API — cycle' },
 };
 
 // ─────────────────────────────────────────────
@@ -415,6 +441,184 @@ end`,
       explanation: '`many?` は要素が 2件以上あるとき true を返します（`count > 1` と等価）。ブロックを渡すこともでき、`records.many? { |r| r.active? }` のように条件付きで「複数あるか」を確認できます。`any?`・`none?`・`one?`・`many?` と意味が揃って読みやすくなります。',
     },
   ],
+
+  activerecord: [
+    {
+      id: 'ar1',
+      category: 'Active Record',
+      categoryKey: 'activerecord',
+      before: `User.all.map(&:email)`,
+      correct: `User.pluck(:email)`,
+      choices: [
+        { text: `User.pluck(:email)`,     correct: true },
+        { text: `User.fetch(:email)`,     correct: false },
+        { text: `User.pick(:email)`,      correct: false },
+        { text: `User.collect(:email)`,   correct: false },
+      ],
+      explanation: '`pluck` は SQL レベルで指定カラムだけ取得し、ActiveRecord オブジェクトを生成せずに配列を返します。`map(&:email)` は全レコードをメモリに読み込んでから属性を取り出すため、大量データでは深刻なメモリ問題になります。なお `pick(:email)` は1件だけ取得する Rails 6+ のメソッドです。',
+    },
+    {
+      id: 'ar2',
+      category: 'Active Record',
+      categoryKey: 'activerecord',
+      before: `User.where(admin: true).count > 0`,
+      correct: `User.where(admin: true).exists?`,
+      choices: [
+        { text: `User.where(admin: true).exists?`,  correct: true },
+        { text: `User.where(admin: true).present?`, correct: false },
+        { text: `User.where(admin: true).found?`,   correct: false },
+        { text: `User.where(admin: true).has_any?`, correct: false },
+      ],
+      explanation: '`exists?` は EXISTS サブクエリを発行し、1件でも見つかった時点で返ります。`count > 0` は全件数をカウントしてから比較するためコストが高く、`present?` は全レコードをメモリに読み込むためさらに最悪です。存在確認には `exists?` 一択です。',
+    },
+    {
+      id: 'ar3',
+      category: 'Active Record',
+      categoryKey: 'activerecord',
+      before: `user = User.find_by(email: email)
+user || User.create!(email: email)`,
+      correct: `User.find_or_create_by(email: email)`,
+      choices: [
+        { text: `User.find_or_create_by(email: email)`, correct: true },
+        { text: `User.find_or_build(email: email)`,      correct: false },
+        { text: `User.where_or_create(email: email)`,    correct: false },
+        { text: `User.upsert(email: email)`,             correct: false },
+      ],
+      explanation: '`find_or_create_by` は指定条件でレコードを検索し、なければ作成します。`find_or_initialize_by` を使うと DB には保存せずインスタンスだけ作れます。また `find_or_create_by!` はバリデーション失敗時に例外を発生させます。',
+    },
+    {
+      id: 'ar4',
+      category: 'Active Record',
+      categoryKey: 'activerecord',
+      before: `User.inactive.each { |u| u.update!(archived: true) }`,
+      correct: `User.inactive.update_all(archived: true)`,
+      choices: [
+        { text: `User.inactive.update_all(archived: true)`,  correct: true },
+        { text: `User.inactive.bulk_update(archived: true)`,  correct: false },
+        { text: `User.inactive.batch_update(archived: true)`, correct: false },
+        { text: `User.inactive.update_each(archived: true)`,  correct: false },
+      ],
+      explanation: '`update_all` は単一の UPDATE SQL を発行し、コールバックや検証を介さずに一括更新します。`each` ループは N 回の UPDATE を発行し、各レコードのコールバックも動くため非常に低速です。コールバック不要の一括更新には `update_all` を使いましょう。',
+    },
+    {
+      id: 'ar5',
+      category: 'Active Record',
+      categoryKey: 'activerecord',
+      before: `User.where("status != ?", "inactive")`,
+      correct: `User.where.not(status: "inactive")`,
+      choices: [
+        { text: `User.where.not(status: "inactive")`,    correct: true },
+        { text: `User.where.exclude(status: "inactive")`, correct: false },
+        { text: `User.where.except(status: "inactive")`,  correct: false },
+        { text: `User.without(status: "inactive")`,       correct: false },
+      ],
+      explanation: '`where.not` はハッシュ構文で NOT 条件を書けます。文字列条件より安全（SQL インジェクションリスクが下がる）で、カラム名をシンボルで書けるためリファクタリングにも強くなります。複数条件の AND NOT にも対応しています。',
+    },
+    {
+      id: 'ar6',
+      category: 'Active Record',
+      categoryKey: 'activerecord',
+      before: `User.all.each { |u| send_newsletter(u) }`,
+      correct: `User.find_each { |u| send_newsletter(u) }`,
+      choices: [
+        { text: `User.find_each { |u| send_newsletter(u) }`,   correct: true },
+        { text: `User.batch_each { |u| send_newsletter(u) }`,  correct: false },
+        { text: `User.each_batch { |u| send_newsletter(u) }`,  correct: false },
+        { text: `User.stream_each { |u| send_newsletter(u) }`, correct: false },
+      ],
+      explanation: '`find_each` はデフォルト 1000 件ずつバッチでレコードを取得します。`all.each` は全レコードを一度にメモリに読み込むため、大量データでは OutOfMemoryError の原因になります。`batch_size:` でバッチサイズを変更でき、`find_in_batches` を使うとバッチ配列ごとに処理することもできます。',
+    },
+  ],
+
+  viewhelper: [
+    {
+      id: 'vh1',
+      category: 'View Helper',
+      categoryKey: 'viewhelper',
+      before: `seconds_ago = Time.current - post.created_at
+"#{(seconds_ago / 60).to_i} 分前"`,
+      correct: `time_ago_in_words(post.created_at)`,
+      choices: [
+        { text: `time_ago_in_words(post.created_at)`, correct: true },
+        { text: `relative_time(post.created_at)`,      correct: false },
+        { text: `humanize_time(post.created_at)`,      correct: false },
+        { text: `ago_in_words(post.created_at)`,       correct: false },
+      ],
+      explanation: '`time_ago_in_words` はロケール対応の相対時間表示を返します。「less than a minute」「3 minutes」「about 2 hours」「3 days」のように自動で単位を変えてくれます。I18n ロケールファイルを設定すれば「3分前」「約2時間前」と日本語化できます。',
+    },
+    {
+      id: 'vh2',
+      category: 'View Helper',
+      categoryKey: 'viewhelper',
+      before: `"#{count} #{count == 1 ? 'comment' : 'comments'}"`,
+      correct: `pluralize(count, 'comment')`,
+      choices: [
+        { text: `pluralize(count, 'comment')`,      correct: true },
+        { text: `inflect(count, 'comment')`,         correct: false },
+        { text: `count_label(count, 'comment')`,     correct: false },
+        { text: `humanize_count(count, 'comment')`,  correct: false },
+      ],
+      explanation: '`pluralize` はカウントが 1 のとき単数形、それ以外で複数形を返します。`pluralize(count, "person", plural: "people")` のように不規則変化にも対応できます。`1 comment` / `3 comments` のような表示に必須のヘルパーです。',
+    },
+    {
+      id: 'vh3',
+      category: 'View Helper',
+      categoryKey: 'viewhelper',
+      before: `"¥#{price.to_s.chars.reverse.each_slice(3).map(&:join).join(',').reverse}"`,
+      correct: `number_to_currency(price, unit: "¥", format: "%u%n")`,
+      choices: [
+        { text: `number_to_currency(price, unit: "¥", format: "%u%n")`, correct: true },
+        { text: `format_currency(price, "¥")`,                           correct: false },
+        { text: `to_currency(price, symbol: "¥")`,                       correct: false },
+        { text: `price.to_currency("¥")`,                                correct: false },
+      ],
+      explanation: '`number_to_currency` は3桁カンマ区切りや通貨記号を自動付加します。I18n 設定と組み合わせることで $1,234.56 / €1.234,56 / ¥1,235 のようにロケールごとの表示を切り替えられます。`precision:` で小数点桁数もカスタマイズできます。',
+    },
+    {
+      id: 'vh4',
+      category: 'View Helper',
+      categoryKey: 'viewhelper',
+      before: `"<div class=\\"alert alert-#{type}\\">#{message}</div>".html_safe`,
+      correct: `content_tag(:div, message, class: "alert alert-#{type}")`,
+      choices: [
+        { text: `content_tag(:div, message, class: "alert alert-#{type}")`, correct: true },
+        { text: `html_tag(:div, message, class: "alert alert-#{type}")`,    correct: false },
+        { text: `wrap_tag(:div, message, class: "alert alert-#{type}")`,    correct: false },
+        { text: `render_tag(:div, message, class: "alert alert-#{type}")`,  correct: false },
+      ],
+      explanation: '`content_tag` は HTML タグを生成し、中身を自動エスケープするため XSS に安全です。`.html_safe` を手で付ける方法はエスケープ処理を手動管理するリスクがあります。Rails 6.1 以降は `tag.div { message }` というタグビルダー構文も使えます。',
+    },
+    {
+      id: 'vh5',
+      category: 'View Helper',
+      categoryKey: 'viewhelper',
+      before: `"#{(file.size / 1024.0 / 1024).round(1)} MB"`,
+      correct: `number_to_human_size(file.size)`,
+      choices: [
+        { text: `number_to_human_size(file.size)`, correct: true },
+        { text: `file_size_tag(file.size)`,         correct: false },
+        { text: `format_bytes(file.size)`,           correct: false },
+        { text: `humanize_size(file.size)`,          correct: false },
+      ],
+      explanation: '`number_to_human_size` はバイト数を自動で適切な単位（Bytes / KB / MB / GB / TB）に変換します。MB 固定で表示するコードと異なり、ファイルサイズに応じて「512 Bytes」「4.2 KB」「1.23 GB」と自動的に単位が切り替わります。',
+    },
+    {
+      id: 'vh6',
+      category: 'View Helper',
+      categoryKey: 'viewhelper',
+      before: `posts.each_with_index do |post, i|
+  row_class = i.even? ? "bg-white" : "bg-gray-100"
+end`,
+      correct: `cycle("bg-white", "bg-gray-100")`,
+      choices: [
+        { text: `cycle("bg-white", "bg-gray-100")`,    correct: true },
+        { text: `alternate("bg-white", "bg-gray-100")`, correct: false },
+        { text: `toggle("bg-white", "bg-gray-100")`,    correct: false },
+        { text: `rotate("bg-white", "bg-gray-100")`,    correct: false },
+      ],
+      explanation: '`cycle` はビュー内で呼び出すたびに引数を順番に返します。テーブルの行の背景色交互表示によく使われます。2つ以上の値で3色以上のローテーションにも対応でき、`name:` オプションで複数の独立したサイクルを同一ビューで使い分けることもできます。',
+    },
+  ],
 };
 
 // ─────────────────────────────────────────────
@@ -445,7 +649,10 @@ function startCategory(category) {
 }
 
 function startAllCategories() {
-  startCategory('activesupport');
+  currentCategory = '__all__';
+  const all = Object.values(ALL_QUESTIONS).flat();
+  currentQuestions = shuffle(all);
+  initQuiz();
 }
 
 function initQuiz() {
@@ -453,6 +660,8 @@ function initQuiz() {
   score = 0;
   categoryAnswers = {
     activesupport: { correct: 0, total: 0 },
+    activerecord:  { correct: 0, total: 0 },
+    viewhelper:    { correct: 0, total: 0 },
   };
   showScreen('quiz');
   renderQuestion();
@@ -626,7 +835,9 @@ function showResult() {
   // カテゴリ別
   const rows = document.getElementById('breakdown-rows');
   const catInfo = {
-    activesupport: { label: '⚡ ActiveSupport', color: 'indigo' },
+    activesupport: { label: '⚡ ActiveSupport', barClass: 'bg-indigo-500' },
+    activerecord:  { label: '🗄️ Active Record',  barClass: 'bg-emerald-500' },
+    viewhelper:    { label: '🎨 View Helper',    barClass: 'bg-rose-500' },
   };
   rows.innerHTML = Object.entries(categoryAnswers).map(([cat, {correct, total: t}]) => {
     if (t === 0) return '';
@@ -637,7 +848,7 @@ function showResult() {
         <span class="text-gray-300">${c.label}</span>
         <div class="flex items-center gap-3">
           <div class="w-24 bg-gray-800 rounded-full h-1.5">
-            <div class="h-1.5 rounded-full bg-${c.color}-500" style="width:${catPct}%"></div>
+            <div class="h-1.5 rounded-full ${c.barClass}" style="width:${catPct}%"></div>
           </div>
           <span class="text-yellow-400 font-bold tabular-nums w-12 text-right">${correct} / ${t}</span>
         </div>
@@ -660,7 +871,11 @@ function shuffle(arr) {
 function goHome() { showScreen('home'); }
 
 function retryCurrentCategory() {
-  startCategory('activesupport');
+  if (currentCategory === '__all__') {
+    startAllCategories();
+  } else {
+    startCategory(currentCategory);
+  }
 }
 
 // ─────────────────────────────────────────────
