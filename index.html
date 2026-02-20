@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rails Magic Quiz 🎩</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/ruby.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+
+    .choice-btn {
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    .choice-btn:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .choice-btn:not(:disabled):active {
+      transform: translateY(0);
+    }
+    .choice-btn:disabled { cursor: not-allowed; }
+
+    .category-card {
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .category-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    pre code.hljs { border-radius: 0.5rem; padding: 1.25rem; font-size: 0.85rem; }
+
+    .fade-in { animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    .shake { animation: shake 0.35s ease; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60%  { transform: translateX(-5px); }
+      40%,80%  { transform: translateX(5px); }
+    }
+
+    .correct-glow { box-shadow: 0 0 16px rgba(74,222,128,0.5); }
+    .wrong-glow   { box-shadow: 0 0 16px rgba(248,113,113,0.5); }
+
+    /* Progress bar shimmer */
+    #progress-bar { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+
+    #run-output { white-space: pre-wrap; font-family: 'Menlo', 'Monaco', monospace; }
+
+    /* Score badge pulse on update */
+    .score-pulse { animation: scorePulse 0.4s ease; }
+    @keyframes scorePulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.3); color:#fbbf24; } }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+<!-- ============================= HOME ============================= -->
+<div id="screen-home" class="min-h-screen flex flex-col items-center justify-center p-6">
+  <div class="text-center mb-12">
+    <div class="text-7xl mb-4">🎩</div>
+    <h1 class="text-5xl font-extrabold mb-3 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+      Rails Magic Quiz
+    </h1>
+    <p class="text-lg text-gray-400">Pure Ruby のコードを Rails らしく書き換えよう！</p>
+  </div>
+
+  <div class="w-full max-w-sm mb-8">
+    <div class="category-card bg-indigo-900/60 border border-indigo-700/50 hover:border-indigo-500 rounded-2xl p-8 cursor-pointer text-center"
+         data-category="activesupport">
+      <div class="text-5xl mb-4">⚡</div>
+      <h2 class="text-2xl font-bold mb-2">ActiveSupport</h2>
+      <p class="text-indigo-300 text-sm mb-5">blank?, present?, presence, in?, try, deep_merge</p>
+      <span class="text-xs bg-indigo-800 text-indigo-300 px-3 py-1 rounded-full">7 問</span>
+    </div>
+  </div>
+
+  <button onclick="startCategory('activesupport')"
+          class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500
+                 rounded-full text-lg font-bold transition-all shadow-lg hover:shadow-indigo-500/30">
+    挑戦する！ 🚀
+  </button>
+
+  <p class="mt-8 text-xs text-gray-600">ruby.wasm で実際にコードを実行できます（初回のみロード時間が必要）</p>
+</div>
+
+<!-- ============================= QUIZ ============================= -->
+<div id="screen-quiz" class="hidden min-h-screen flex flex-col">
+  <!-- sticky header -->
+  <div class="sticky top-0 z-10 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-6 py-3">
+    <div class="max-w-3xl mx-auto flex items-center justify-between">
+      <button onclick="goHome()" class="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+        ← ホーム
+      </button>
+      <div class="flex items-center gap-4 text-sm">
+        <span class="text-gray-400">
+          <span id="q-current" class="text-white font-bold">1</span>
+          <span class="text-gray-600"> / </span>
+          <span id="q-total">6</span>
+        </span>
+        <span id="q-category-badge" class="hidden sm:inline-block text-xs px-3 py-1 rounded-full bg-gray-800 text-gray-300"></span>
+        <div class="flex items-center gap-2 bg-gray-800 px-4 py-1 rounded-full">
+          <span class="text-gray-400 text-xs">スコア</span>
+          <span id="q-score" class="font-bold text-yellow-400 text-lg">0</span>
+        </div>
+      </div>
+    </div>
+    <!-- progress bar -->
+    <div class="max-w-3xl mx-auto mt-2">
+      <div class="w-full bg-gray-800 rounded-full h-1.5">
+        <div id="progress-bar" class="h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- question body -->
+  <div class="flex-1 max-w-3xl mx-auto w-full px-4 py-8" id="quiz-body">
+
+    <div class="mb-2 text-sm text-gray-500 font-medium">こんなコードがあります：</div>
+
+    <!-- before code -->
+    <div class="mb-6">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xs bg-red-900/50 text-red-300 border border-red-800/50 px-2 py-0.5 rounded font-mono">Before</span>
+        <span class="text-xs text-gray-600">Pure Ruby のコード</span>
+      </div>
+      <pre class="rounded-xl overflow-auto"><code id="q-before-code" class="language-ruby"></code></pre>
+    </div>
+
+    <div class="text-lg font-semibold mb-4 text-gray-200">✨ Rails らしく書くとどれ？</div>
+
+    <!-- choices -->
+    <div id="q-choices" class="flex flex-col gap-3 mb-6"></div>
+
+    <!-- explanation (shown after answering) -->
+    <div id="q-explanation" class="hidden fade-in mt-6 rounded-2xl overflow-hidden border border-gray-700">
+      <div class="px-5 py-4 bg-gray-800/80">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-green-400 font-bold">💡 解説</span>
+          <a id="q-doc-link" href="#" target="_blank" rel="noopener noreferrer"
+             class="hidden text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
+            📖 <span id="q-doc-label">ドキュメント</span> ↗
+          </a>
+        </div>
+        <p id="q-explanation-text" class="text-gray-300 text-sm leading-relaxed"></p>
+      </div>
+
+      <!-- after code -->
+      <div class="px-5 pb-4 bg-gray-800/80">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs bg-green-900/50 text-green-300 border border-green-800/50 px-2 py-0.5 rounded font-mono">After</span>
+          <span class="text-xs text-gray-600">Rails らしいコード</span>
+        </div>
+        <pre class="rounded-xl overflow-auto"><code id="q-after-code" class="language-ruby"></code></pre>
+      </div>
+
+      <!-- ruby.wasm run -->
+      <div class="px-5 pb-5 bg-gray-900/60 border-t border-gray-700">
+        <div class="flex items-center gap-3 mt-4">
+          <button id="btn-run" onclick="runCurrentCode()"
+                  class="flex items-center gap-2 px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600
+                         border border-gray-600 hover:border-gray-500 rounded-lg transition-all font-mono">
+            <span id="run-icon">▶</span>
+            <span id="run-label">コードを実行 <span class="text-gray-400 text-xs">(ruby.wasm)</span></span>
+          </button>
+          <span id="ruby-status" class="text-xs text-gray-500"></span>
+        </div>
+        <div id="run-output" class="hidden mt-3 p-4 bg-black/60 rounded-xl border border-gray-700
+                                    text-green-400 text-sm max-h-56 overflow-auto"></div>
+      </div>
+    </div>
+
+    <!-- next button -->
+    <div class="mt-6 flex justify-end">
+      <button id="btn-next" onclick="nextQuestion()"
+              class="hidden px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold transition-all
+                     shadow-lg hover:shadow-indigo-500/30">
+        次の問題 →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= RESULT ============================= -->
+<div id="screen-result" class="hidden min-h-screen flex flex-col items-center justify-center p-6">
+  <div class="text-center max-w-lg w-full">
+    <div id="result-emoji" class="text-8xl mb-6 fade-in">🎉</div>
+    <h2 class="text-3xl font-extrabold mb-2">クリア！</h2>
+
+    <div class="flex items-baseline justify-center gap-2 my-6">
+      <span id="result-score" class="text-7xl font-extrabold text-yellow-400"></span>
+      <span class="text-3xl text-gray-600">/</span>
+      <span id="result-total" class="text-3xl text-gray-400"></span>
+    </div>
+
+    <p id="result-message" class="text-lg text-gray-300 mb-8"></p>
+
+    <!-- stars -->
+    <div id="result-stars" class="text-4xl mb-6"></div>
+
+    <!-- category breakdown -->
+    <div id="result-breakdown" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8 text-left">
+      <h3 class="font-bold text-gray-400 text-sm mb-4 uppercase tracking-wider">カテゴリ別スコア</h3>
+      <div id="breakdown-rows"></div>
+    </div>
+
+    <div class="flex flex-wrap gap-3 justify-center">
+      <button onclick="retryCurrentCategory()"
+              class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold transition-all">
+        もう一度 🔄
+      </button>
+      <button onclick="goHome()"
+              class="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-full font-bold transition-all">
+        カテゴリ選択 🏠
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= SCRIPT ============================= -->
+<script type="module">
+
+// ─────────────────────────────────────────────
+//  ドキュメント URL テーブル
+// ─────────────────────────────────────────────
+const DOC_URLS = {
+  as1:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-blank-3F',   label: 'Rails API — Object#blank?' },
+  as2:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-present-3F', label: 'Rails API — Object#present?' },
+  as3:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-presence',   label: 'Rails API — Object#presence' },
+  as4:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-in-3F',      label: 'Rails API — Object#in?' },
+  as5:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-try',        label: 'Rails API — Object#try' },
+  as6:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-in-3F',      label: 'Rails API — Object#in?' },
+  hash5: { url: 'https://api.rubyonrails.org/classes/Hash.html#method-i-deep_merge',   label: 'Rails API — Hash#deep_merge' },
+};
+
+// ─────────────────────────────────────────────
+//  問題データ
+// ─────────────────────────────────────────────
+const ALL_QUESTIONS = {
+  activesupport: [
+    {
+      id: 'as1',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `str.nil? || str == ""`,
+      correct: `str.blank?`,
+      choices: [
+        { text: `str.blank?`, correct: true },
+        { text: `str.nil? || str.empty?`, correct: false },
+        { text: `str.empty?`, correct: false },
+        { text: `str.absent?`, correct: false },
+      ],
+      explanation: '`blank?` は ActiveSupport が提供するメソッドです。nil・空文字・空白のみの文字列・空配列・空ハッシュすべてに true を返します。`nil.blank?` も安全に呼び出せるため nil チェックが不要になります。',
+      runCode: `str1 = nil
+str2 = ""
+str3 = "   "
+str4 = "hello"
+p [str1.blank?, str2.blank?, str3.blank?, str4.blank?]
+# => [true, true, true, false]`,
+    },
+    {
+      id: 'as2',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `!name.nil? && name != ""`,
+      correct: `name.present?`,
+      choices: [
+        { text: `name.present?`, correct: true },
+        { text: `!name.blank?`, correct: false },
+        { text: `name.exists?`, correct: false },
+        { text: `name.filled?`, correct: false },
+      ],
+      explanation: '`present?` は `blank?` の反対で、値が存在する（nil でも空でもない）場合に true を返します。`!name.blank?` でも同じですが、`present?` の方が意図が明確で読みやすいコードになります。',
+      runCode: `name1 = nil
+name2 = ""
+name3 = "Alice"
+p [name1.present?, name2.present?, name3.present?]
+# => [false, false, true]`,
+    },
+    {
+      id: 'as3',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `params[:name].present? ? params[:name] : nil`,
+      correct: `params[:name].presence`,
+      choices: [
+        { text: `params[:name].presence`, correct: true },
+        { text: `params[:name].or_nil`, correct: false },
+        { text: `params[:name].to_presence`, correct: false },
+        { text: `params[:name].present_value`, correct: false },
+      ],
+      explanation: '`presence` は `present?` なら self を、`blank?` なら nil を返します。`x.present? ? x : nil` と完全に等価です。DB の空文字列を nil として扱う際などに特に有用です。',
+      runCode: `p "hello".presence    # => "hello"
+p "".presence          # => nil
+p nil.presence         # => nil
+p "   ".presence       # => nil`,
+    },
+    {
+      id: 'as4',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `[1, 2, 3].include?(x)`,
+      correct: `x.in?([1, 2, 3])`,
+      choices: [
+        { text: `x.in?([1, 2, 3])`, correct: true },
+        { text: `[1, 2, 3].has?(x)`, correct: false },
+        { text: `x.included_in?([1, 2, 3])`, correct: false },
+        { text: `[1, 2, 3].contains?(x)`, correct: false },
+      ],
+      explanation: '`in?` はレシーバーがコレクションに含まれるかを確認します。「x が [1,2,3] の中にある？」という英語の自然な語順で書けるため、条件分岐の中でより読みやすいコードになります。Range や Set など `include?` を持つオブジェクトならすべて使えます。',
+      runCode: `x = 2
+p x.in?([1, 2, 3])     # => true
+p 5.in?([1, 2, 3])     # => false
+p "a".in?(%w[a b c])   # => true
+p 3.in?(1..5)           # => true`,
+    },
+    {
+      id: 'as5',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `user ? user.name : nil`,
+      correct: `user.try(:name)`,
+      choices: [
+        { text: `user.try(:name)`, correct: true },
+        { text: `user.safe(:name)`, correct: false },
+        { text: `user.try.name`, correct: false },
+        { text: `user&.name rescue nil`, correct: false },
+      ],
+      explanation: '`try` は nil-safe なメソッド呼び出しです。レシーバーが nil なら nil を返し、そうでなければメソッドを呼び出します。なお Ruby 2.3+ では `user&.name`（safe navigation operator）が言語機能として導入されており、現在はこちらがより推奨されます。',
+      runCode: `user = nil
+p user.try(:upcase)    # => nil
+
+user = "alice"
+p user.try(:upcase)    # => "ALICE"
+p user.try(:nonexistent_method)  # => nil`,
+    },
+    {
+      id: 'as6',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `role == "admin" || role == "editor" || role == "viewer"`,
+      correct: `role.in?(%w[admin editor viewer])`,
+      choices: [
+        { text: `role.in?(%w[admin editor viewer])`, correct: true },
+        { text: `%w[admin editor viewer].any? { |r| r == role }`, correct: false },
+        { text: `role.any?(%w[admin editor viewer])`, correct: false },
+        { text: `role.one_of?("admin", "editor", "viewer")`, correct: false },
+      ],
+      explanation: '`in?` を使うと複数値との比較が一行で書けます。値が増えても配列に追加するだけでよく、`||` で繋ぐ書き方より格段に保守しやすくなります。',
+      runCode: `role = "admin"
+p role.in?(%w[admin editor viewer])   # => true
+
+role = "guest"
+p role.in?(%w[admin editor viewer])   # => false`,
+    },
+    {
+      id: 'hash5',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `defaults.merge(config) do |_, old_val, new_val|
+  old_val.is_a?(Hash) ? old_val.merge(new_val) : new_val
+end`,
+      correct: `defaults.deep_merge(config)`,
+      choices: [
+        { text: `defaults.deep_merge(config)`, correct: true },
+        { text: `defaults.merge!(config)`, correct: false },
+        { text: `defaults.recursive_merge(config)`, correct: false },
+        { text: `defaults.nested_merge(config)`, correct: false },
+      ],
+      explanation: '`deep_merge` は ActiveSupport が提供するメソッドで、ネストした Hash を再帰的にマージします。通常の `merge` はトップレベルのキーしかマージしませんが、`deep_merge` はネスト全体をマージします。',
+      runCode: `defaults = {db: {host: "localhost", port: 5432}, cache: {ttl: 300}}
+config   = {db: {port: 5433, name: "myapp"}, log: "info"}
+
+# 通常の merge（:db が丸ごと上書き）
+p defaults.merge(config)
+
+# deep_merge 相当（:db の中身をマージ）
+p defaults.merge(config) { |_, o, n|
+  o.is_a?(Hash) && n.is_a?(Hash) ? o.merge(n) : n
+}`,
+    },
+  ],
+};
+
+// ─────────────────────────────────────────────
+//  ゲーム状態
+// ─────────────────────────────────────────────
+let currentCategory = null;
+let currentQuestions  = [];
+let currentIndex      = 0;
+let score             = 0;
+let answered          = false;
+let categoryAnswers   = {};   // { activesupport: {correct:0, total:0}, ... }
+
+// ruby.wasm
+let rubyVM          = null;
+let rubyInitializing = false;
+let rubyReady       = false;
+let pendingRun      = false;
+
+// ─────────────────────────────────────────────
+//  画面切替
+// ─────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('[id^="screen-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById(`screen-${name}`).classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────
+//  クイズ開始
+// ─────────────────────────────────────────────
+function startCategory(category) {
+  currentCategory = category;
+  currentQuestions = shuffle([...ALL_QUESTIONS[category]]);
+  initQuiz();
+}
+
+function startAllCategories() {
+  startCategory('activesupport');
+}
+
+function initQuiz() {
+  currentIndex = 0;
+  score = 0;
+  categoryAnswers = {
+    activesupport: { correct: 0, total: 0 },
+  };
+  showScreen('quiz');
+  renderQuestion();
+}
+
+// ─────────────────────────────────────────────
+//  問題レンダリング
+// ─────────────────────────────────────────────
+function renderQuestion() {
+  const q = currentQuestions[currentIndex];
+  answered = false;
+
+  // ヘッダー更新
+  document.getElementById('q-current').textContent = currentIndex + 1;
+  document.getElementById('q-total').textContent   = currentQuestions.length;
+  document.getElementById('q-score').textContent   = score;
+
+  // カテゴリバッジ
+  const badge = document.getElementById('q-category-badge');
+  badge.textContent = q.category;
+
+  // プログレスバー
+  const pct = (currentIndex / currentQuestions.length) * 100;
+  document.getElementById('progress-bar').style.width = `${pct}%`;
+
+  // Before コード
+  const beforeEl = document.getElementById('q-before-code');
+  beforeEl.removeAttribute('data-highlighted');
+  beforeEl.textContent = q.before;
+  hljs.highlightElement(beforeEl);
+
+  // 選択肢
+  const choicesEl = document.getElementById('q-choices');
+  choicesEl.innerHTML = '';
+  const shuffled = shuffle([...q.choices]);
+
+  shuffled.forEach((choice, i) => {
+    const btn = document.createElement('button');
+    btn.className = [
+      'choice-btn w-full text-left flex items-start gap-3 p-4 rounded-xl',
+      'border border-gray-700 bg-gray-900/80 hover:bg-gray-800 hover:border-gray-500',
+    ].join(' ');
+
+    const label = document.createElement('span');
+    label.className = 'text-gray-500 font-mono text-sm shrink-0 mt-0.5';
+    label.textContent = `${String.fromCharCode(65 + i)})`;
+
+    const codeWrap = document.createElement('pre');
+    codeWrap.className = 'bg-transparent m-0 p-0 overflow-x-auto flex-1';
+    const codeEl = document.createElement('code');
+    codeEl.className = 'language-ruby text-sm !bg-transparent !p-0';
+    codeEl.textContent = choice.text;
+    codeWrap.appendChild(codeEl);
+
+    btn.appendChild(label);
+    btn.appendChild(codeWrap);
+    btn.onclick = () => selectChoice(choice, btn, shuffled);
+    choicesEl.appendChild(btn);
+    hljs.highlightElement(codeEl);
+  });
+
+  // 解説・次へボタンを隠す
+  document.getElementById('q-explanation').classList.add('hidden');
+  document.getElementById('btn-next').classList.add('hidden');
+  document.getElementById('run-output').classList.add('hidden');
+  document.getElementById('ruby-status').textContent = '';
+  document.getElementById('btn-run').disabled = false;
+  document.getElementById('run-icon').textContent = '▶';
+  document.getElementById('run-label').innerHTML = 'コードを実行 <span class="text-gray-400 text-xs">(ruby.wasm)</span>';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────────
+//  選択肢クリック
+// ─────────────────────────────────────────────
+function selectChoice(choice, clickedBtn, allChoices) {
+  if (answered) return;
+  answered = true;
+
+  const q = currentQuestions[currentIndex];
+  const allBtns = document.querySelectorAll('.choice-btn');
+
+  allBtns.forEach(b => { b.disabled = true; });
+
+  // 正解ボタンをグリーンに
+  allBtns.forEach((b, i) => {
+    if (allChoices[i].correct) {
+      b.classList.remove('border-gray-700', 'bg-gray-900/80');
+      b.classList.add('border-green-500', 'bg-green-900/40', 'correct-glow');
+    }
+  });
+
+  if (choice.correct) {
+    score++;
+    document.getElementById('q-score').textContent = score;
+    const scoreEl = document.getElementById('q-score');
+    scoreEl.classList.remove('score-pulse');
+    void scoreEl.offsetWidth;
+    scoreEl.classList.add('score-pulse');
+  } else {
+    // 選んだボタンをレッドに
+    clickedBtn.classList.remove('border-gray-700', 'bg-gray-900/80');
+    clickedBtn.classList.add('border-red-500', 'bg-red-900/40', 'wrong-glow');
+    clickedBtn.classList.add('shake');
+  }
+
+  // カテゴリスコア記録
+  const cat = q.categoryKey;
+  categoryAnswers[cat].total++;
+  if (choice.correct) categoryAnswers[cat].correct++;
+
+  // 解説表示
+  const afterEl = document.getElementById('q-after-code');
+  afterEl.removeAttribute('data-highlighted');
+  afterEl.textContent = q.correct;
+  hljs.highlightElement(afterEl);
+
+  document.getElementById('q-explanation-text').textContent = q.explanation;
+
+  // ドキュメントリンク
+  const docLink  = document.getElementById('q-doc-link');
+  const docLabel = document.getElementById('q-doc-label');
+  const doc = DOC_URLS[q.id];
+  if (doc) {
+    docLink.href = doc.url;
+    docLabel.textContent = doc.label;
+    docLink.classList.remove('hidden');
+  } else {
+    docLink.classList.add('hidden');
+  }
+
+  document.getElementById('q-explanation').classList.remove('hidden');
+  document.getElementById('btn-next').classList.remove('hidden');
+
+  setTimeout(() => {
+    document.getElementById('q-explanation').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 150);
+}
+
+// ─────────────────────────────────────────────
+//  次の問題
+// ─────────────────────────────────────────────
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex >= currentQuestions.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+// ─────────────────────────────────────────────
+//  リザルト画面
+// ─────────────────────────────────────────────
+function showResult() {
+  showScreen('result');
+  const total = currentQuestions.length;
+  document.getElementById('result-score').textContent = score;
+  document.getElementById('result-total').textContent  = total;
+
+  const pct = score / total;
+  let emoji, msg;
+  if (pct >= 0.9) { emoji = '🏆'; msg = '完璧！Rails マスターですね！'; }
+  else if (pct >= 0.7) { emoji = '🎉'; msg = '素晴らしい！Rails の書き方をよく理解しています！'; }
+  else if (pct >= 0.5) { emoji = '👍'; msg = '良い調子！もう少し練習すれば完璧です！'; }
+  else { emoji = '📚'; msg = 'Rails の魔法をもっと学んでみましょう！'; }
+
+  document.getElementById('result-emoji').textContent   = emoji;
+  document.getElementById('result-message').textContent = msg;
+
+  // 星
+  const stars = Math.round(pct * 5);
+  document.getElementById('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(5 - stars);
+
+  // カテゴリ別
+  const rows = document.getElementById('breakdown-rows');
+  const catInfo = {
+    activesupport: { label: '⚡ ActiveSupport', color: 'indigo' },
+  };
+  rows.innerHTML = Object.entries(categoryAnswers).map(([cat, {correct, total: t}]) => {
+    if (t === 0) return '';
+    const c = catInfo[cat];
+    const catPct = t > 0 ? Math.round((correct / t) * 100) : 0;
+    return `
+      <div class="flex items-center justify-between py-3 border-b border-gray-800 last:border-0">
+        <span class="text-gray-300">${c.label}</span>
+        <div class="flex items-center gap-3">
+          <div class="w-24 bg-gray-800 rounded-full h-1.5">
+            <div class="h-1.5 rounded-full bg-${c.color}-500" style="width:${catPct}%"></div>
+          </div>
+          <span class="text-yellow-400 font-bold tabular-nums w-12 text-right">${correct} / ${t}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+//  ruby.wasm 初期化
+// ─────────────────────────────────────────────
+async function initRuby() {
+  if (rubyReady || rubyInitializing) return;
+  rubyInitializing = true;
+
+  const statusEl = document.getElementById('ruby-status');
+  const runBtn   = document.getElementById('btn-run');
+  const runIcon  = document.getElementById('run-icon');
+  const runLabel = document.getElementById('run-label');
+  const outputEl = document.getElementById('run-output');
+
+  const setStatus = (msg) => { statusEl.textContent = msg; };
+  const setError  = (msg) => {
+    runBtn.disabled     = false;
+    runIcon.textContent = '⚠️';
+    runLabel.innerHTML  = 'コードを実行 <span class="text-gray-400 text-xs">(ruby.wasm)</span>';
+    setStatus(`❌ ${msg}`);
+    outputEl.textContent = `ruby.wasm の初期化に失敗しました。\n\n${msg}\n\nF12 → Console で詳細を確認してください。`;
+    outputEl.classList.remove('hidden');
+  };
+
+  runBtn.disabled     = true;
+  runIcon.textContent = '⏳';
+  runLabel.textContent = '読み込み中...';
+  setStatus('ruby.wasm を初期化しています（初回は 30〜60 秒かかる場合があります）');
+
+  try {
+    // Step 1: ESM モジュール読み込み
+    setStatus('[1/4] @ruby/wasm-wasi モジュールを読み込み中...');
+    const { DefaultRubyVM } = await import(
+      'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.1/dist/browser/+esm'
+    );
+
+    // Step 2: WASM バイナリを ArrayBuffer でフェッチ
+    setStatus('[2/4] ruby+stdlib.wasm をダウンロード中（約 30 MB）...');
+    const response = await fetch(
+      'https://cdn.jsdelivr.net/npm/@ruby/3.4-wasm-wasi@2.7.1/dist/ruby+stdlib.wasm'
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status} – WASM ファイルの取得に失敗`);
+
+    // Step 3: コンパイル（compileStreaming が失敗する場合は ArrayBuffer で再試行）
+    setStatus('[3/4] WASM をコンパイル中...');
+    let wasmModule;
+    const buf = await response.arrayBuffer();
+    wasmModule = await WebAssembly.compile(buf);
+
+    // Step 4: VM 起動
+    setStatus('[4/4] Ruby VM を起動中...');
+    const { vm } = await DefaultRubyVM(wasmModule);
+
+    // js gem を最初にロード（ruby.wasm ブラウザ環境の必須要件）
+    vm.eval(`require "js"`);
+
+    // 出力キャプチャ用グローバル配列と puts/p/print のオーバーライド
+    // （StringIO は ruby.wasm の IO ブリッジと干渉するため使わない）
+    vm.eval(`
+      $__quiz_out = []
+
+      module Kernel
+        def puts(*args)
+          if args.empty?
+            $__quiz_out << ""
+          else
+            args.each do |a|
+              if a.is_a?(Array)
+                a.flatten.each { |x| $__quiz_out << x.to_s }
+              else
+                $__quiz_out << a.to_s
+              end
+            end
+          end
+          nil
+        end
+
+        def p(*args)
+          args.each { |a| $__quiz_out << a.inspect }
+          args.length == 1 ? args[0] : (args.empty? ? nil : args)
+        end
+
+        def print(*args)
+          $__quiz_out << args.map(&:to_s).join
+          nil
+        end
+      end
+    `);
+
+    // ActiveSupport polyfill
+    vm.eval(`
+      class Object
+        def blank?
+          respond_to?(:empty?) ? empty? : !self
+        end
+        def present?; !blank?; end
+        def presence; self if present?; end
+        def in?(collection); collection.include?(self); end
+        def try(method_name = nil, *args, &block)
+          if block_given? && method_name.nil?
+            yield(self)
+          else
+            public_send(method_name, *args, &block)
+          end
+        rescue NoMethodError
+          nil
+        end
+      end
+
+      class NilClass
+        def blank?; true; end
+        def try(*_a); nil; end
+      end
+      class FalseClass
+        def blank?; true; end
+      end
+      class String
+        def blank?; strip.empty?; end
+      end
+      class Hash
+        unless method_defined?(:slice)
+          def slice(*keys)
+            keys.each_with_object({}) { |k, h| h[k] = self[k] if key?(k) }
+          end
+        end
+        unless method_defined?(:except)
+          def except(*keys)
+            reject { |k, _| keys.include?(k) }
+          end
+        end
+        def deep_merge(other, &blk)
+          merge(other) do |key, ov, nv|
+            if ov.is_a?(Hash) && nv.is_a?(Hash)
+              ov.deep_merge(nv, &blk)
+            elsif blk
+              blk.call(key, ov, nv)
+            else
+              nv
+            end
+          end
+        end
+      end
+    `);
+
+    rubyVM    = vm;
+    rubyReady = true;
+
+    runBtn.disabled     = false;
+    runIcon.textContent = '▶';
+    runLabel.innerHTML  = 'コードを実行 <span class="text-gray-400 text-xs">(ruby.wasm)</span>';
+    setStatus('✅ ruby.wasm 準備完了');
+    setTimeout(() => { setStatus(''); }, 3000);
+
+    if (pendingRun) { pendingRun = false; execRuby(); }
+
+  } catch (err) {
+    console.error('[ruby.wasm] 初期化失敗:', err);
+    setError(err.message || String(err));
+  }
+
+  rubyInitializing = false;
+}
+
+// ─────────────────────────────────────────────
+//  コード実行
+// ─────────────────────────────────────────────
+async function runCurrentCode() {
+  if (!rubyReady) {
+    pendingRun = true;
+    await initRuby();
+    return;
+  }
+  execRuby();
+}
+
+function execRuby() {
+  const q = currentQuestions[currentIndex];
+  if (!q || !q.runCode) return;
+
+  const outputEl = document.getElementById('run-output');
+  outputEl.textContent = '実行中...';
+  outputEl.classList.remove('hidden');
+
+  try {
+    // バッククォートをエスケープ（JSテンプレートリテラル内に埋め込むため）
+    const safeCode = q.runCode.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
+
+    // 出力バッファをリセット
+    rubyVM.eval(`$__quiz_out = []`);
+
+    // コードを実行（puts/p は init 時にオーバーライド済みで $__quiz_out に蓄積）
+    rubyVM.eval(`
+      begin
+        ${safeCode}
+      rescue => e
+        $__quiz_out << "#{e.class}: #{e.message}"
+      end
+    `);
+
+    // 結果を取り出す
+    const result = rubyVM.eval(`$__quiz_out.join("\\n")`);
+    let text;
+    if (result && typeof result.toJS === 'function') {
+      text = result.toJS();
+    } else {
+      text = String(result);
+    }
+
+    outputEl.textContent = (text || '').trim() || '(出力なし)';
+  } catch (e) {
+    console.error('[ruby.wasm] 実行エラー:', e);
+    outputEl.textContent = `実行エラー: ${e.message}`;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  ユーティリティ
+// ─────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function goHome() { showScreen('home'); }
+
+function retryCurrentCategory() {
+  startCategory('activesupport');
+}
+
+// ─────────────────────────────────────────────
+//  グローバル公開
+// ─────────────────────────────────────────────
+window.goHome               = goHome;
+window.startAllCategories   = startAllCategories;
+window.nextQuestion         = nextQuestion;
+window.runCurrentCode       = runCurrentCode;
+window.retryCurrentCategory = retryCurrentCategory;
+
+// ─────────────────────────────────────────────
+//  カテゴリカード
+// ─────────────────────────────────────────────
+document.querySelectorAll('.category-card').forEach(card => {
+  card.addEventListener('click', () => startCategory(card.dataset.category));
+});
+
+</script>
+</body>
+</html>
