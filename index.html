@@ -72,7 +72,7 @@
       <div class="text-5xl mb-4">⚡</div>
       <h2 class="text-2xl font-bold mb-2">ActiveSupport</h2>
       <p class="text-indigo-300 text-sm mb-5">blank?, present?, presence, in?, try, deep_merge</p>
-      <span class="text-xs bg-indigo-800 text-indigo-300 px-3 py-1 rounded-full">7 問</span>
+      <span class="text-xs bg-indigo-800 text-indigo-300 px-3 py-1 rounded-full">13 問</span>
     </div>
   </div>
 
@@ -210,13 +210,19 @@
 //  ドキュメント URL テーブル
 // ─────────────────────────────────────────────
 const DOC_URLS = {
-  as1:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-blank-3F',   label: 'Rails API — Object#blank?' },
-  as2:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-present-3F', label: 'Rails API — Object#present?' },
-  as3:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-presence',   label: 'Rails API — Object#presence' },
-  as4:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-in-3F',      label: 'Rails API — Object#in?' },
-  as5:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-try',        label: 'Rails API — Object#try' },
-  as6:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-in-3F',      label: 'Rails API — Object#in?' },
-  hash5: { url: 'https://api.rubyonrails.org/classes/Hash.html#method-i-deep_merge',   label: 'Rails API — Hash#deep_merge' },
+  as1:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-blank-3F',     label: 'Rails API — Object#blank?' },
+  as2:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-present-3F',   label: 'Rails API — Object#present?' },
+  as3:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-presence',     label: 'Rails API — Object#presence' },
+  as4:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-in-3F',        label: 'Rails API — Object#in?' },
+  as5:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-try',          label: 'Rails API — Object#try' },
+  as6:   { url: 'https://api.rubyonrails.org/classes/Object.html#method-i-in-3F',        label: 'Rails API — Object#in?' },
+  hash5: { url: 'https://api.rubyonrails.org/classes/Hash.html#method-i-deep_merge',     label: 'Rails API — Hash#deep_merge' },
+  as7:   { url: 'https://api.rubyonrails.org/classes/String.html#method-i-squish',       label: 'Rails API — String#squish' },
+  as8:   { url: 'https://api.rubyonrails.org/classes/Array.html#method-c-wrap',          label: 'Rails API — Array.wrap' },
+  as9:   { url: 'https://api.rubyonrails.org/classes/Enumerable.html#method-i-index_by', label: 'Rails API — Enumerable#index_by' },
+  as10:  { url: 'https://api.rubyonrails.org/classes/String.html#method-i-truncate',     label: 'Rails API — String#truncate' },
+  as11:  { url: 'https://api.rubyonrails.org/classes/Numeric.html#method-i-weeks',       label: 'Rails API — Numeric#weeks' },
+  as12:  { url: 'https://api.rubyonrails.org/classes/Enumerable.html#method-i-many-3F',  label: 'Rails API — Enumerable#many?' },
 };
 
 // ─────────────────────────────────────────────
@@ -323,6 +329,90 @@ end`,
         { text: `defaults.nested_merge(config)`, correct: false },
       ],
       explanation: '`deep_merge` は ActiveSupport が提供するメソッドで、ネストした Hash を再帰的にマージします。通常の `merge` はトップレベルのキーしかマージしませんが、`deep_merge` はネスト全体をマージします。',
+    },
+    {
+      id: 'as7',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `str.strip.gsub(/\\s+/, ' ')`,
+      correct: `str.squish`,
+      choices: [
+        { text: `str.squish`,              correct: true },
+        { text: `str.normalize`,           correct: false },
+        { text: `str.compact_whitespace`,  correct: false },
+        { text: `str.strip_all`,           correct: false },
+      ],
+      explanation: '`squish` は先頭・末尾の空白を除去し、文字列内の連続した空白（スペース・タブ・改行すべて）を1つのスペースにまとめます。フォーム入力のクリーニングや、HTMLから抽出したテキストの正規化によく使われます。',
+    },
+    {
+      id: 'as8',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `value.is_a?(Array) ? value : (value.nil? ? [] : [value])`,
+      correct: `Array.wrap(value)`,
+      choices: [
+        { text: `Array.wrap(value)`,  correct: true },
+        { text: `Array(value)`,       correct: false },
+        { text: `[value].flatten`,    correct: false },
+        { text: `value.to_a`,         correct: false },
+      ],
+      explanation: '`Array.wrap` は値を安全に配列に変換します。nil → []、Array → そのまま、それ以外 → [value]。Ruby の `Kernel#Array()` と似ていますが、`Array(nil)` が `[]` を返すのに対し `Array("foo")` は `["foo"]` を返すなど、より直感的な動作をします。コントローラで「配列でも単値でも受け付けたい」場合に重宝します。',
+    },
+    {
+      id: 'as9',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `users.each_with_object({}) { |u, h| h[u.id] = u }`,
+      correct: `users.index_by(&:id)`,
+      choices: [
+        { text: `users.index_by(&:id)`, correct: true },
+        { text: `users.to_h(&:id)`,     correct: false },
+        { text: `users.key_by(&:id)`,   correct: false },
+        { text: `users.group_by(&:id)`, correct: false },
+      ],
+      explanation: '`index_by` はブロックの戻り値をキー、要素を値とするハッシュを作ります。`group_by` はキーが重複する場合に配列にまとめますが、`index_by` はキーがユニークな場合（ID など）に使い、値は配列でなく要素そのものになります。DB から取得したレコードをIDで引けるハッシュにするときによく使われます。',
+    },
+    {
+      id: 'as10',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `str.length > 30 ? str[0...27] + "..." : str`,
+      correct: `str.truncate(30)`,
+      choices: [
+        { text: `str.truncate(30)`,  correct: true },
+        { text: `str.limit(30)`,     correct: false },
+        { text: `str.ellipsis(30)`,  correct: false },
+        { text: `str.shorten(30)`,   correct: false },
+      ],
+      explanation: '`truncate` は文字列を指定の長さに切り詰め、末尾に省略記号を付けます。デフォルトの省略記号は `"..."` ですが、`omission:` オプションで変更できます。また `separator:` オプションを使うと単語の途中で切らないようにできます（例: `str.truncate(30, separator: " ")`）。',
+    },
+    {
+      id: 'as11',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `Time.current + 7 * 24 * 60 * 60`,
+      correct: `Time.current + 1.week`,
+      choices: [
+        { text: `Time.current + 1.week`,      correct: true },
+        { text: `Time.current.add_weeks(1)`,  correct: false },
+        { text: `Time.current + Week.new(1)`, correct: false },
+        { text: `Time.current.week_later`,    correct: false },
+      ],
+      explanation: 'ActiveSupport は Integer / Float に `seconds`、`minutes`、`hours`、`days`、`weeks`、`months`、`years` などのメソッドを追加します。これらは `ActiveSupport::Duration` オブジェクトを返し、時刻や日付との加減算ができます。さらに `1.week.from_now` や `3.days.ago` のような書き方もでき、Rails コードで時間計算を直感的に記述できます。',
+    },
+    {
+      id: 'as12',
+      category: 'ActiveSupport core-ext',
+      categoryKey: 'activesupport',
+      before: `notifications.count > 1`,
+      correct: `notifications.many?`,
+      choices: [
+        { text: `notifications.many?`,     correct: true },
+        { text: `notifications.plural?`,   correct: false },
+        { text: `notifications.multiple?`, correct: false },
+        { text: `notifications.several?`,  correct: false },
+      ],
+      explanation: '`many?` は要素が 2件以上あるとき true を返します（`count > 1` と等価）。ブロックを渡すこともでき、`records.many? { |r| r.active? }` のように条件付きで「複数あるか」を確認できます。`any?`・`none?`・`one?`・`many?` と意味が揃って読みやすくなります。',
     },
   ],
 };
